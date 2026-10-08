@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Premium Snake Game - System Active</title>
+    <link rel="stylesheet" href="./style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <canvas id="bgCanvas"></canvas>
+    <div class="bg-overlay"></div>
+
+    <div class="scanlines"></div>
+
+    <div class="ui-decor top-left">
+      <p>SYSTEM_STATUS: <span class="glow-text">ONLINE</span></p>
+      <p>CONNECTION: <span class="glow-text">SECURE</span></p>
+    </div>
+    <div class="ui-decor bottom-right">
+      <p>v.2.0.4 // NEON_PROTOCOL</p>
+      <p>ENG: <span class="glow-text">A-STAR / ACTIVE</span></p>
+    </div>
+
+    <div class="game-container" id="game-container">
+      <div class="header">
+        <div class="score-board">
+          <p>SCORE: <span id="current-score">0</span></p>
+        </div>
+        <div class="score-board high-score">
+          <p>HIGH: <span id="high-score">0</span></p>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+      <div id="game-over-screen" class="hidden">
+        <h2>SYSTEM FAILURE</h2>
+        <p id="final-score-display">SCORE: 0</p>
+        <button id="restart-btn">REBOOT SYSTEM</button>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

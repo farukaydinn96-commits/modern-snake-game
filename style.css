@@ -1,0 +1,223 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Share Tech Mono", monospace;
+  user-select: none;
+}
+
+body {
+  background-color: #020202;
+  color: #00ffcc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#bgCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+  opacity: 0.6;
+}
+
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, transparent 0%, #050505 80%);
+  z-index: -1;
+}
+
+.ui-decor {
+  position: absolute;
+  font-size: 12px;
+  color: rgba(0, 255, 204, 0.4);
+  letter-spacing: 2px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.top-left {
+  top: 20px;
+  left: 20px;
+}
+.bottom-right {
+  bottom: 20px;
+  right: 20px;
+  text-align: right;
+}
+
+.glow-text {
+  color: #00ffcc;
+  text-shadow: 0 0 8px rgba(0, 255, 204, 0.8);
+}
+
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06)
+    );
+  background-size:
+    100% 2px,
+    3px 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.game-container {
+  position: relative;
+  background: rgba(10, 10, 10, 0.8);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow:
+    0 0 40px rgba(0, 255, 204, 0.1),
+    inset 0 0 20px rgba(0, 255, 204, 0.05);
+  border: 1px solid rgba(0, 255, 204, 0.3);
+  backdrop-filter: blur(10px);
+  transition: box-shadow 0.2s ease-in-out;
+  z-index: 10;
+}
+
+.game-container.glow-eat {
+  box-shadow:
+    0 0 70px rgba(255, 0, 85, 0.6),
+    inset 0 0 30px rgba(255, 0, 85, 0.2);
+}
+
+.game-container.glow-crash {
+  box-shadow: 0 0 90px rgba(255, 0, 0, 0.8);
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+  10% {
+    transform: translate(-2px, -2px) rotate(-1deg);
+  }
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+}
+
+.shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 22px;
+  letter-spacing: 2px;
+}
+
+.high-score {
+  color: #ff0055;
+  text-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
+}
+
+#current-score {
+  text-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
+}
+
+canvas#gameCanvas {
+  background-color: #050505;
+  border-radius: 6px;
+  box-shadow: inset 0 0 40px rgba(0, 255, 204, 0.08);
+  border: 2px solid #1a1a1a;
+  display: block;
+}
+
+#game-over-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+#game-over-screen h2 {
+  color: #ff0055;
+  font-size: 36px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 20px rgba(255, 0, 85, 0.9);
+  letter-spacing: 3px;
+}
+
+#final-score-display {
+  color: #fff;
+  font-size: 20px;
+  margin-bottom: 25px;
+}
+
+#restart-btn {
+  background: transparent;
+  color: #00ffcc;
+  border: 2px solid #00ffcc;
+  padding: 12px 30px;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#restart-btn:hover {
+  background: #00ffcc;
+  color: #000;
+  box-shadow: 0 0 20px #00ffcc;
+}
+
+.hidden {
+  display: none !important;
+}
