@@ -1,68 +1,37 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const scoreElement = document.getElementById("current-score");
-const highScoreElement = document.getElementById("high-score");
-const gameOverScreen = document.getElementById("game-over-screen");
-const restartBtn = document.getElementById("restart-btn");
-const gameContainer = document.getElementById("game-container");
-const finalScoreDisplay = document.getElementById("final-score-display");
-
-const gridSize = 20;
-const tileCount = canvas.width / gridSize;
-
-let highScore = localStorage.getItem("premiumSnakeHighScore") || 0;
-highScoreElement.innerText = highScore;
+window.onerror = function (message, source, lineno, colno, error) {
+  alert("CRITICAL ERROR: " + message + "\nSatır: " + lineno);
+  return false;
+};
 
 const bgCanvas = document.getElementById("bgCanvas");
 const bgCtx = bgCanvas.getContext("2d");
 
 function resizeBgCanvas() {
-  bgCanvas.width = window.innerWidth;
-  bgCanvas.height = window.innerHeight;
+  if (bgCanvas) {
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+  }
 }
 window.addEventListener("resize", resizeBgCanvas);
 resizeBgCanvas();
 
 const letters = "010101010101XASDFGHJKLQWERTYUIOPZXCVBNM";
-const fontSize = 14;
-let columns = bgCanvas.width / fontSize;
-let drops = [];
-for (let x = 0; x < columns; x++) drops[x] = Math.random() * 100;
+let drops = Array(Math.floor((bgCanvas ? bgCanvas.width : 1000) / 14)).fill(0);
 
 function drawMatrixBackground() {
+  if (!bgCtx) return;
   bgCtx.fillStyle = "rgba(2, 2, 2, 0.1)";
   bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-
   for (let i = 0; i < drops.length; i++) {
     const text = letters.charAt(Math.floor(Math.random() * letters.length));
-
-    const isPurple = Math.random() > 0.8;
-    bgCtx.fillStyle = isPurple ? "#b300ff" : "#00ffcc";
-    bgCtx.font = fontSize + "px monospace";
-    bgCtx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-    if (drops[i] * fontSize > bgCanvas.height && Math.random() > 0.975) {
-      drops[i] = 0;
-    }
+    bgCtx.fillStyle = Math.random() > 0.8 ? "#b300ff" : "#00ffcc";
+    bgCtx.font = "14px monospace";
+    bgCtx.fillText(text, i * 14, drops[i] * 14);
+    if (drops[i] * 14 > bgCanvas.height && Math.random() > 0.975) drops[i] = 0;
     drops[i] += 0.5;
   }
 }
 setInterval(drawMatrixBackground, 30);
-
-function drawTronGrid() {
-  ctx.strokeStyle = "rgba(0, 255, 204, 0.05)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i < canvas.width; i += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, canvas.height);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(canvas.width, i);
-    ctx.stroke();
-  }
-}
 
 class Particle {
   constructor(x, y, color) {
@@ -75,62 +44,55 @@ class Particle {
     this.life = 1.0;
     this.decay = Math.random() * 0.05 + 0.02;
   }
-
   update() {
     this.x += this.vx;
     this.y += this.vy;
     this.life -= this.decay;
   }
-
   draw(ctx) {
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.fillStyle = this.color;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = this.color;
     ctx.fillRect(this.x, this.y, this.size, this.size);
     ctx.globalAlpha = 1.0;
-    ctx.shadowBlur = 0;
   }
 }
 
-class Snake {
-  constructor() {
+class BaseSnake {
+  constructor(gridSize) {
+    this.gridSize = gridSize;
+    this.baseSpeed = 8;
+    this.scoreMultiplier = 1;
+    this.color = "#00ffcc";
     this.reset();
   }
-
   reset() {
     this.body = [{ x: 10, y: 10 }];
     this.dx = 0;
     this.dy = 0;
     this.tailLength = 3;
   }
-
   update() {
     const head = { x: this.body[0].x + this.dx, y: this.body[0].y + this.dy };
     this.body.unshift(head);
-    while (this.body.length > this.tailLength) {
-      this.body.pop();
-    }
+    while (this.body.length > this.tailLength) this.body.pop();
   }
-
   draw(ctx) {
     this.body.forEach((part, index) => {
       ctx.fillStyle =
         index === 0
-          ? "#00ffcc"
+          ? this.color
           : `rgba(0, 200, 150, ${1 - index / this.body.length})`;
       ctx.shadowBlur = index === 0 ? 15 : 0;
-      ctx.shadowColor = "#00ffcc";
+      ctx.shadowColor = this.color;
       ctx.fillRect(
-        part.x * gridSize + 1,
-        part.y * gridSize + 1,
-        gridSize - 2,
-        gridSize - 2,
+        part.x * this.gridSize + 1,
+        part.y * this.gridSize + 1,
+        this.gridSize - 2,
+        this.gridSize - 2,
       );
       ctx.shadowBlur = 0;
     });
   }
-
   setDirection(dx, dy) {
     if (this.dx === 0 && dx !== 0) {
       this.dx = dx;
@@ -140,105 +102,168 @@ class Snake {
       this.dx = 0;
     }
   }
+}
 
-  checkCollision() {
-    const head = this.body[0];
-    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount)
-      return true;
-    for (let i = 1; i < this.body.length; i++) {
-      if (head.x === this.body[i].x && head.y === this.body[i].y) return true;
-    }
-    return false;
+class SpeedSnake extends BaseSnake {
+  constructor(gridSize) {
+    super(gridSize);
+    this.baseSpeed = 12;
+    this.scoreMultiplier = 2;
+    this.color = "#ffcc00";
+  }
+}
+
+class PhantomSnake extends BaseSnake {
+  constructor(gridSize) {
+    super(gridSize);
+    this.baseSpeed = 6;
+    this.color = "#b300ff";
+  }
+  draw(ctx) {
+    ctx.globalAlpha = 0.7;
+    super.draw(ctx);
+    ctx.globalAlpha = 1.0;
   }
 }
 
 class Food {
-  constructor() {
-    this.respawn([]);
+  constructor(gridSize, tileCount) {
+    this.gridSize = gridSize;
+    this.tileCount = tileCount;
+    this.respawn([], []);
   }
-
-  respawn(snakeBody) {
+  respawn(snakeBody, walls) {
     let isOccupied = true;
-    while (isOccupied) {
-      this.x = Math.floor(Math.random() * tileCount);
-      this.y = Math.floor(Math.random() * tileCount);
-      isOccupied = snakeBody.some(
+    let attempts = 0;
+    while (isOccupied && attempts < 1000) {
+      this.x = Math.floor(Math.random() * this.tileCount);
+      this.y = Math.floor(Math.random() * this.tileCount);
+      const inSnake = snakeBody.some(
         (part) => part.x === this.x && part.y === this.y,
       );
+      const inWall = walls.some(
+        (wall) => wall.x === this.x && wall.y === this.y,
+      );
+      isOccupied = inSnake || inWall;
+      attempts++;
     }
   }
-
   draw(ctx) {
     ctx.fillStyle = "#ff0055";
     ctx.shadowBlur = 20;
     ctx.shadowColor = "#ff0055";
     ctx.fillRect(
-      this.x * gridSize + 2,
-      this.y * gridSize + 2,
-      gridSize - 4,
-      gridSize - 4,
+      this.x * this.gridSize + 2,
+      this.y * this.gridSize + 2,
+      this.gridSize - 4,
+      this.gridSize - 4,
     );
     ctx.shadowBlur = 0;
   }
 }
 
-class Game {
-  constructor() {
-    this.snake = new Snake();
-    this.food = new Food();
+class GameEngine {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext("2d");
+
+    const width = this.canvas.width || 400;
+    this.gridSize = 20;
+    this.tileCount = width / this.gridSize;
+
     this.particles = [];
+    this.walls = [];
     this.score = 0;
     this.isGameOver = false;
     this.lastRenderTime = 0;
-    this.snakeSpeed = 8;
+    this.animationId = null;
+
+    this.scoreEl = document.getElementById("current-score");
+    this.highScoreEl = document.getElementById("high-score");
+
+    try {
+      this.highScoreEl.innerText =
+        localStorage.getItem("premiumSnakeHighScore") || 0;
+    } catch (e) {}
+    this.setupInputs();
   }
 
-  start() {
-    this.setupKeyboardControls();
-    this.setupSwipeControls();
-    restartBtn.addEventListener("click", () => this.restart());
-    window.requestAnimationFrame((time) => this.loop(time));
+  init(characterType, mapType) {
+    if (characterType === "speed") this.snake = new SpeedSnake(this.gridSize);
+    else if (characterType === "phantom")
+      this.snake = new PhantomSnake(this.gridSize);
+    else this.snake = new BaseSnake(this.gridSize);
+
+    this.currentSpeed = this.snake.baseSpeed;
+    this.walls = [];
+    if (mapType === "box") {
+      for (let i = 4; i < 16; i++) {
+        this.walls.push({ x: i, y: 4 });
+        this.walls.push({ x: i, y: 15 });
+      }
+    }
+    this.food = new Food(this.gridSize, this.tileCount);
+    this.restart();
   }
 
-  setupKeyboardControls() {
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowUp" || e.key === "w") this.snake.setDirection(0, -1);
-      else if (e.key === "ArrowDown" || e.key === "s")
-        this.snake.setDirection(0, 1);
-      else if (e.key === "ArrowLeft" || e.key === "a")
-        this.snake.setDirection(-1, 0);
-      else if (e.key === "ArrowRight" || e.key === "d")
-        this.snake.setDirection(1, 0);
-    });
-  }
+  setupInputs() {
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (
+          ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(
+            e.key,
+          )
+        ) {
+          e.preventDefault();
+        }
+        if (!this.snake || this.isGameOver) return;
 
-  setupSwipeControls() {
+        if (["ArrowUp", "w"].includes(e.key)) this.snake.setDirection(0, -1);
+        else if (["ArrowDown", "s"].includes(e.key))
+          this.snake.setDirection(0, 1);
+        else if (["ArrowLeft", "a"].includes(e.key))
+          this.snake.setDirection(-1, 0);
+        else if (["ArrowRight", "d"].includes(e.key))
+          this.snake.setDirection(1, 0);
+      },
+      { passive: false },
+    );
+
     let touchStartX = 0;
     let touchStartY = 0;
-
-    window.addEventListener(
+    document.addEventListener(
       "touchstart",
       (e) => {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
       },
-      { passive: false },
+      { passive: true },
     );
 
-    window.addEventListener(
+    document.addEventListener(
       "touchmove",
       (e) => {
-        if (e.target === canvas) e.preventDefault();
+        if (
+          !document.getElementById("screen-game").classList.contains("hidden")
+        ) {
+          e.preventDefault();
+        }
       },
       { passive: false },
     );
 
-    window.addEventListener("touchend", (e) => {
+    document.addEventListener("touchend", (e) => {
+      if (
+        !this.snake ||
+        this.isGameOver ||
+        document.getElementById("screen-game").classList.contains("hidden")
+      )
+        return;
       let touchEndX = e.changedTouches[0].screenX;
       let touchEndY = e.changedTouches[0].screenY;
       let dx = touchEndX - touchStartX;
       let dy = touchEndY - touchStartY;
-
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 30) this.snake.setDirection(1, 0);
         else if (dx < -30) this.snake.setDirection(-1, 0);
@@ -251,99 +276,163 @@ class Game {
 
   restart() {
     this.snake.reset();
-    this.food.respawn(this.snake.body);
+    this.food.respawn(this.snake.body, this.walls);
     this.particles = [];
     this.score = 0;
     this.isGameOver = false;
-    this.snakeSpeed = 8;
-    scoreElement.innerText = this.score;
-    gameOverScreen.classList.add("hidden");
-    gameContainer.classList.remove("glow-crash");
-    gameContainer.classList.remove("shake");
-    window.requestAnimationFrame((time) => this.loop(time));
+    this.currentSpeed = this.snake.baseSpeed;
+    this.scoreEl.innerText = this.score;
+    this.lastRenderTime = window.performance.now();
+
+    document.getElementById("game-container").className = "game-container";
+    document.getElementById("game-over-screen").classList.add("hidden");
+    document.getElementById("game-over-screen").style.display = "none";
+
+    if (this.animationId) window.cancelAnimationFrame(this.animationId);
+    this.animationId = window.requestAnimationFrame((time) => this.loop(time));
   }
 
-  triggerExplosion(x, y, color) {
-    for (let i = 0; i < 20; i++) {
-      this.particles.push(new Particle(x, y, color));
-    }
+  drawWalls() {
+    this.ctx.fillStyle = "rgba(0, 255, 204, 0.3)";
+    this.walls.forEach((w) =>
+      this.ctx.fillRect(
+        w.x * this.gridSize,
+        w.y * this.gridSize,
+        this.gridSize,
+        this.gridSize,
+      ),
+    );
   }
 
-  checkFoodConsumption() {
+  checkCollisions() {
     const head = this.snake.body[0];
-    if (head.x === this.food.x && head.y === this.food.y) {
-      this.triggerExplosion(
-        this.food.x * gridSize + gridSize / 2,
-        this.food.y * gridSize + gridSize / 2,
-        "#ff0055",
-      );
-
-      gameContainer.classList.add("glow-eat");
-      setTimeout(() => gameContainer.classList.remove("glow-eat"), 200);
-
-      this.food.respawn(this.snake.body);
-      this.snake.tailLength++;
-      this.score += 10;
-      scoreElement.innerText = this.score;
-
-      if (this.score % 50 === 0) this.snakeSpeed += 1.5;
+    if (
+      head.x < 0 ||
+      head.x >= this.tileCount ||
+      head.y < 0 ||
+      head.y >= this.tileCount
+    )
+      return true;
+    for (let i = 1; i < this.snake.body.length; i++) {
+      if (head.x === this.snake.body[i].x && head.y === this.snake.body[i].y)
+        return true;
     }
+    if (this.walls.some((w) => w.x === head.x && w.y === head.y)) return true;
+    return false;
   }
 
   handleGameOver() {
     this.isGameOver = true;
-    gameContainer.classList.add("shake");
-    gameContainer.classList.add("glow-crash");
+    const container = document.getElementById("game-container");
+    container.classList.add("shake", "glow-crash");
 
-    if (this.score > highScore) {
-      highScore = this.score;
-      localStorage.setItem("premiumSnakeHighScore", highScore);
-      highScoreElement.innerText = highScore;
-    }
+    try {
+      let hs = localStorage.getItem("premiumSnakeHighScore") || 0;
+      if (this.score > hs) {
+        localStorage.setItem("premiumSnakeHighScore", this.score);
+        this.highScoreEl.innerText = this.score;
+      }
+    } catch (e) {}
 
-    finalScoreDisplay.innerText = `SCORE: ${this.score}`;
-    setTimeout(() => gameOverScreen.classList.remove("hidden"), 300);
+    document.getElementById("final-score-display").innerText =
+      `SCORE: ${this.score}`;
+    setTimeout(() => {
+      const goScreen = document.getElementById("game-over-screen");
+      goScreen.classList.remove("hidden");
+      goScreen.style.display = "flex";
+    }, 300);
   }
 
   loop(currentTime) {
-    if (this.isGameOver) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawTronGrid();
-      this.snake.draw(ctx);
-      this.food.draw(ctx);
-      this.particles.forEach((p) => p.draw(ctx));
-      this.particles.forEach((p) => p.update());
-      this.particles = this.particles.filter((p) => p.life > 0);
-      if (this.particles.length > 0)
-        window.requestAnimationFrame((time) => this.loop(time));
-      return;
-    }
-
-    window.requestAnimationFrame((time) => this.loop(time));
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawTronGrid();
-    this.food.draw(ctx);
-    this.snake.draw(ctx);
-
-    this.particles.forEach((p) => p.draw(ctx));
-    this.particles.forEach((p) => p.update());
-    this.particles = this.particles.filter((p) => p.life > 0);
+    if (this.isGameOver) return;
+    this.animationId = window.requestAnimationFrame((time) => this.loop(time));
 
     const secondsSinceLastRender = (currentTime - this.lastRenderTime) / 1000;
-    if (secondsSinceLastRender < 1 / this.snakeSpeed) return;
+    if (secondsSinceLastRender < 1 / this.currentSpeed) return;
     this.lastRenderTime = currentTime;
 
     if (this.snake.dx !== 0 || this.snake.dy !== 0) {
       this.snake.update();
-      this.checkFoodConsumption();
+      const head = this.snake.body[0];
+      if (head.x === this.food.x && head.y === this.food.y) {
+        for (let i = 0; i < 20; i++)
+          this.particles.push(
+            new Particle(
+              this.food.x * this.gridSize + 10,
+              this.food.y * this.gridSize + 10,
+              "#ff0055",
+            ),
+          );
+        this.food.respawn(this.snake.body, this.walls);
+        this.snake.tailLength++;
+        this.score += 10 * this.snake.scoreMultiplier;
+        this.scoreEl.innerText = this.score;
+        if (this.score % 50 === 0) this.currentSpeed += 1;
+
+        const c = document.getElementById("game-container");
+        c.classList.add("glow-eat");
+        setTimeout(() => c.classList.remove("glow-eat"), 200);
+      }
+      if (this.checkCollisions()) return this.handleGameOver();
     }
 
-    if (this.snake.checkCollision()) {
-      this.handleGameOver();
-    }
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.drawWalls();
+    this.food.draw(this.ctx);
+    this.snake.draw(this.ctx);
+
+    this.particles.forEach((p) => {
+      p.update();
+      p.draw(this.ctx);
+    });
+    this.particles = this.particles.filter((p) => p.life > 0);
   }
 }
 
-const game = new Game();
-game.start();
+class AppManager {
+  constructor() {
+    this.screens = [
+      "screen-menu",
+      "screen-character",
+      "screen-map",
+      "screen-game",
+    ];
+    this.selectedCharacter = "neon";
+    this.gameEngine = new GameEngine("gameCanvas");
+  }
+
+  setScreen(screenId) {
+    this.screens.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (id === screenId) {
+          el.classList.remove("hidden");
+          el.style.display = "flex";
+        } else {
+          el.classList.add("hidden");
+          el.style.display = "none";
+        }
+      }
+    });
+  }
+
+  selectCharacter(char) {
+    this.selectedCharacter = char;
+    this.setScreen("screen-map");
+  }
+
+  startGame(mapType) {
+    this.setScreen("screen-game");
+    setTimeout(() => {
+      this.gameEngine.init(this.selectedCharacter, mapType);
+    }, 100);
+  }
+
+  restartGame() {
+    this.gameEngine.restart();
+  }
+}
+
+window.onload = () => {
+  window.app = new AppManager();
+};

@@ -2,8 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Premium Snake Game - System Active</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Premium Snake - System OS</title>
     <link rel="stylesheet" href="./style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
@@ -13,34 +16,96 @@
   <body>
     <canvas id="bgCanvas"></canvas>
     <div class="bg-overlay"></div>
-
     <div class="scanlines"></div>
 
     <div class="ui-decor top-left">
-      <p>SYSTEM_STATUS: <span class="glow-text">ONLINE</span></p>
-      <p>CONNECTION: <span class="glow-text">SECURE</span></p>
+      <p>SYSTEM: <span class="glow-text">ONLINE</span></p>
     </div>
     <div class="ui-decor bottom-right">
-      <p>v.2.0.4 // NEON_PROTOCOL</p>
-      <p>ENG: <span class="glow-text">A-STAR / ACTIVE</span></p>
+      <p>v.3.1 // STABLE_BUILD</p>
     </div>
 
-    <div class="game-container" id="game-container">
-      <div class="header">
-        <div class="score-board">
-          <p>SCORE: <span id="current-score">0</span></p>
-        </div>
-        <div class="score-board high-score">
-          <p>HIGH: <span id="high-score">0</span></p>
-        </div>
+    <div id="app-container">
+      <div id="screen-menu" class="screen">
+        <h1 class="glitch-text">SNAKE OS</h1>
+        <button class="cyber-btn" onclick="app.setScreen('screen-character')">
+          INITIALIZE
+        </button>
+        <button
+          class="cyber-btn outline mt-20"
+          onclick="alert('Leaderboard is offline.')"
+        >
+          LEADERBOARD
+        </button>
       </div>
 
-      <canvas id="gameCanvas" width="400" height="400"></canvas>
+      <div id="screen-character" class="screen hidden">
+        <h2>SELECT PROTOCOL</h2>
+        <div class="card-container">
+          <div class="card" onclick="app.selectCharacter('neon')">
+            <h3>NEON</h3>
+            <p>Balanced speed. Standard multiplier.</p>
+          </div>
+          <div class="card" onclick="app.selectCharacter('speed')">
+            <h3 style="color: #ffcc00">SPEED</h3>
+            <p>1.5x Speed. 2x Score Multiplier.</p>
+          </div>
+          <div class="card" onclick="app.selectCharacter('phantom')">
+            <h3 style="color: #b300ff">PHANTOM</h3>
+            <p>Slower. Forgiving hitboxes.</p>
+          </div>
+        </div>
+        <button
+          class="cyber-btn outline mt-20"
+          onclick="app.setScreen('screen-menu')"
+        >
+          BACK
+        </button>
+      </div>
 
-      <div id="game-over-screen" class="hidden">
-        <h2>SYSTEM FAILURE</h2>
-        <p id="final-score-display">SCORE: 0</p>
-        <button id="restart-btn">REBOOT SYSTEM</button>
+      <div id="screen-map" class="screen hidden">
+        <h2>SELECT SECTOR</h2>
+        <div class="card-container">
+          <div class="card" onclick="app.startGame('void')">
+            <h3>THE VOID</h3>
+            <p>Classic open grid. No inner walls.</p>
+          </div>
+          <div class="card" onclick="app.startGame('box')">
+            <h3 style="color: #ff0055">THE BOX</h3>
+            <p>Tight corners. Inner walls active.</p>
+          </div>
+        </div>
+        <button
+          class="cyber-btn outline mt-20"
+          onclick="app.setScreen('screen-character')"
+        >
+          BACK
+        </button>
+      </div>
+
+      <div id="screen-game" class="screen hidden">
+        <div class="game-container" id="game-container">
+          <div class="header">
+            <div class="score-board">
+              SCORE: <span id="current-score">0</span>
+            </div>
+            <div class="score-board high-score">
+              HIGH: <span id="high-score">0</span>
+            </div>
+          </div>
+          <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+          <div id="game-over-screen" class="hidden">
+            <h2>SYSTEM FAILURE</h2>
+            <p id="final-score-display">SCORE: 0</p>
+            <button class="cyber-btn" onclick="app.setScreen('screen-menu')">
+              MAIN MENU
+            </button>
+            <button class="cyber-btn outline mt-20" onclick="app.restartGame()">
+              REBOOT
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
